@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cleveland Browns Record Lookup</title>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --orange: #FF3C00;
+      --orange-dark: #cc3000;
+      --brown: #3B1F0A;
+      --brown-mid: #5C3317;
+      --tan: #f5efe8;
+      --tan-dark: #ede5d8;
+      --white: #ffffff;
+      --text-primary: #1a0a00;
+      --text-secondary: #7a5c45;
+      --text-muted: #b09070;
+      --border: #ddd0c0;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--tan);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+    .topbar {
+      background: var(--brown);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      height: 56px;
+      gap: 14px;
+    }
+    .topbar-dog { font-size: 22px; line-height: 1; }
+    .topbar-title {
+      font-family: 'Oswald', sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--white);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    .topbar-title span { color: var(--orange); }
+    .hero {
+      background: var(--orange);
+      padding: 3rem 2rem 2.5rem;
+      text-align: center;
+      position: relative;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 6px;
+      background: var(--brown);
+    }
+    .hero h1 {
+      font-family: 'Oswald', sans-serif;
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      font-weight: 700;
+      color: var(--white);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      line-height: 1.1;
+    }
+    .hero p {
+      font-size: 15px;
+      color: rgba(255,255,255,0.82);
+      margin-top: 10px;
+      font-weight: 500;
+    }
+    .main {
+      max-width: 580px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 3rem;
+    }
+    .key-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .key-card-title {
+      font-family: 'Oswald', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--brown);
+      margin-bottom: 6px;
+    }
+    .key-hint {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    .key-hint a { color: var(--orange); text-decoration: none; font-weight: 600; }
+    .key-hint a:hover { text-decoration: underline; }
+    .key-row { display: flex; gap: 8px; }
+    #api-key-input {
+      flex: 1;
+      height: 42px;
+      padding: 0 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: monospace;
+      color: var(--text-primary);
+      background: var(--tan);
+      transition: border-color 0.15s;
+    }
+    #api-key-input:focus { outline: none; border-color: var(--orange); background: var(--white); }
+    .save-btn {
+      height: 42px;
+      padding: 0 18px;
+      background: var(--brown);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .save-btn:hover { background: var(--brown-mid); }
+    .key-status { font-size: 12px; margin-top: 8px; min-height: 16px; }
+    .key-status.ok { color: #2d7a2d; font-weight: 500; }
+    .key-status.err { color: #c0392b; font-weight: 500; }
+    #lookup-section { display: none; }
+    .lookup-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .lookup-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+    }
+    .quick-btns { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+    .quick-btn {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 13px;
+      border-radius: 6px;
+      border: 1.5px solid var(--border);
+      background: var(--tan);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: 'Inter', sans-serif;
+    }
+    .quick-btn:hover { background: var(--orange); color: var(--white); border-color: var(--orange); }
+    .input-row { display: flex; gap: 10px; align-items: center; }
+    #start-date {
+      flex: 1;
+      height: 44px;
+      padding: 0 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      color: var(--text-primary);
+      background: var(--tan);
+      transition: border-color 0.15s;
+    }
+    #start-date:focus { outline: none; border-color: var(--orange); background: var(--white); }
+    .go-btn {
+      height: 44px;
+      padding: 0 24px;
+      background: var(--orange);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .go-btn:hover { background: var(--orange-dark); }
+    .go-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      padding: 10px 0;
+    }
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid var(--border);
+      border-top-color: var(--orange);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .result-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .result-hero {
+      background: var(--brown);
+      padding: 1.75rem 1.5rem 1.5rem;
+    }
+    .result-record {
+      font-family: 'Oswald', sans-serif;
+      font-size: clamp(3rem, 12vw, 4.5rem);
+      font-weight: 700;
+      color: var(--white);
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+    .result-record .dash { color: var(--orange); }
+    .result-sub {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      margin-top: 8px;
+    }
+    .result-body { padding: 1.25rem 1.5rem; }
+    .pct-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .pct-label-left {
+      font-family: 'Oswald', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      min-width: 55px;
+    }
+    .bar-bg { flex: 1; height: 8px; background: var(--tan-dark); border-radius: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; background: var(--orange); border-radius: 4px; transition: width 0.7s ease; }
+    .bar-pct {
+      font-family: 'Oswald', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      min-width: 48px;
+      text-align: right;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .stat-box {
+      background: var(--tan);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+    .stat-val {
+      font-family: 'Oswald', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .stat-key {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .section-heading {
+      font-family: 'Oswald', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .season-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .season-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 12px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+      background: var(--white);
+    }
+    .season-row:nth-child(odd) { border-right: 1px solid var(--border); }
+    .s-year {
+      font-family: 'Oswald', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--text-secondary);
+    }
+    .s-rec {
+      font-family: 'Oswald', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .s-rec.good { color: #2d6e2d; }
+    .s-rec.bad { color: #aa2a2a; }
+    .absent-row {
+      grid-column: 1 / -1;
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 10px 14px;
+      text-align: center;
+      background: var(--tan);
+      border-bottom: 1px solid var(--border);
+      font-style: italic;
+    }
+    .result-note {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 14px;
+      line-height: 1.6;
+    }
+    .error-box {
+      background: #fff5f3;
+      border: 1px solid #fcc;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 13px;
+      color: #b03020;
+      line-height: 1.6;
+    }
+    .error-box code {
+      display: block;
+      margin-top: 8px;
+      font-size: 11px;
+      font-family: monospace;
+      opacity: 0.7;
+      word-break: break-all;
+    }
+    .change-key-btn {
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      margin-top: 10px;
+      display: inline-block;
+      font-family: 'Inter', sans-serif;
+    }
+    .change-key-btn:hover { color: var(--orange); text-decoration: underline; }
+    footer {
+      background: var(--brown);
+      padding: 1.25rem 2rem;
+      text-align: center;
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+      line-height: 1.7;
+    }
+    footer strong { color: rgba(255,255,255,0.65); }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <span class="topbar-dog">🐾</span>
+    <span class="topbar-title">Cleveland <span>Browns</span> Record Lookup</span>
+  </div>
+
+  <div class="hero">
+    <h1>How bad have they been?</h1>
+    <p>Look up the Browns' regular season record from any date in history to today.</p>
+  </div>
+
+  <div class="main">
+
+    <div id="key-section" class="key-card">
+      <div class="key-card-title">Enter your Anthropic API key to get started</div>
+      <p class="key-hint">
+        Get a free key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>.
+        Your key is stored only in your browser and sent only to the Anthropic API — never anywhere else.
+      </p>
+      <div class="key-row">
+        <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off" />
+        <button class="save-btn" onclick="saveKey()">Save</button>
+      </div>
+      <div id="key-status" class="key-status"></div>
+    </div>
+
+    <div id="lookup-section">
+      <div class="lookup-card">
+        <div class="lookup-label">Quick select</div>
+        <div class="quick-btns">
+          <button class="quick-btn" onclick="lookup('1999-09-01')">Since 1999</button>
+          <button class="quick-btn" onclick="lookup('2008-09-01')">Since 2008</button>
+          <button class="quick-btn" onclick="lookup('2015-09-01')">Since 2015</button>
+          <button class="quick-btn" onclick="lookup('2020-09-01')">Since 2020</button>
+          <button class="quick-btn" onclick="lookup('2023-09-01')">2023 season</button>
+          <button class="quick-btn" onclick="lookup('2024-09-01')">2024 season</button>
+        </div>
+        <div class="lookup-label">Or pick any date</div>
+        <div class="input-row">
+          <input type="date" id="start-date" />
+          <button class="go-btn" id="go-btn" onclick="lookup()">Look up</button>
+        </div>
+      </div>
+
+      <div id="result-area"></div>
+      <button class="change-key-btn" onclick="changeKey()">Change API key</button>
+    </div>
+
+  </div>
+
+  <footer>
+    <strong>Regular season only — playoff games excluded.</strong><br>
+    Data powered by Claude AI &nbsp;·&nbsp; Not affiliated with the NFL or the Cleveland Browns organization.
+  </footer>
+
+<script>
+  const KEY_STORAGE = 'browns_anthropic_key';
+
+  function saveKey() {
+    const val = document.getElementById('api-key-input').value.trim();
+    const status = document.getElementById('key-status');
+    if (!val.startsWith('sk-ant-') || val.length < 20) {
+      status.textContent = "That doesn't look like a valid key — it should start with sk-ant-";
+      status.className = 'key-status err';
+      return;
+    }
+    localStorage.setItem(KEY_STORAGE, val);
+    status.textContent = '✓ Key saved';
+    status.className = 'key-status ok';
+    setTimeout(showLookup, 350);
+  }
+
+  function showLookup() {
+    document.getElementById('key-section').style.display = 'none';
+    document.getElementById('lookup-section').style.display = 'block';
+    const today = new Date().toISOString().split('T')[0];
+    const d = document.getElementById('start-date');
+    d.max = today;
+    d.value = '1999-09-01';
+  }
+
+  function changeKey() {
+    localStorage.removeItem(KEY_STORAGE);
+    document.getElementById('key-section').style.display = 'block';
+    document.getElementById('lookup-section').style.display = 'none';
+    document.getElementById('api-key-input').value = '';
+    document.getElementById('key-status').textContent = '';
+    document.getElementById('result-area').innerHTML = '';
+  }
+
+  function getKey() { return localStorage.getItem(KEY_STORAGE) || ''; }
+
+  async function lookup(preset) {
+    const dateEl = document.getElementById('start-date');
+    if (preset) dateEl.value = preset;
+    const startDate = dateEl.value;
+    if (!startDate) return;
+
+    const key = getKey();
+    if (!key) { changeKey(); return; }
+
+    const btn = document.getElementById('go-btn');
+    const area = document.getElementById('result-area');
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+    area.innerHTML = '<div class="loading"><div class="spinner"></div>Checking the record books\u2026</div>';
+
+    const today = new Date().toISOString().split('T')[0];
+
+    const prompt = `You are a Cleveland Browns NFL records assistant with accurate historical data.
+
+The user wants the Cleveland Browns REGULAR SEASON ONLY record (wins, losses, ties). Do NOT include any playoff or postseason games. From ${startDate} through today (${today}).
+
+Return ONLY a raw JSON object with no markdown, no backticks, no explanation:
+{
+  "wins": number,
+  "losses": number,
+  "ties": number,
+  "winPct": number,
+  "totalGames": number,
+  "seasons": [{"season": "2024", "wins": number, "losses": number, "ties": number}],
+  "note": "one sentence about the date range"
+}
+
+Rules:
+- Regular season only, no playoffs
+- Include every season touched by the date range
+- winPct = (wins + 0.5*ties) / totalGames
+- Sort seasons oldest to newest
+- Use real, accurate historical Browns data`;
+
+    let errDetail = '';
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-5',
+          max_tokens: 1500,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      if (!res.ok) {
+        const t = await res.text();
+        errDetail = 'HTTP ' + res.status + ': ' + t.slice(0, 300);
+        throw new Error('api_error');
+      }
+
+      const data = await res.json();
+      if (data.error) { errDetail = JSON.stringify(data.error); throw new Error('api_error'); }
+
+      const raw = (data.content || []).map(function(i){ return i.text || ''; }).join('').replace(/```json|```/g, '').trim();
+      const rec = JSON.parse(raw);
+
+      const pct = (rec.winPct * 100).toFixed(1);
+      const barW = Math.min(100, Math.round(rec.winPct * 100));
+      const fromLabel = new Date(startDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+      const seasons = (rec.seasons || []).slice().sort(function(a,b){ return b.season - a.season; });
+
+      function makeRow(s) {
+        if (!s) return '<div class="season-row" style="background:var(--tan);border-bottom:none"></div>';
+        const cls = s.wins > s.losses ? 'good' : s.losses > s.wins ? 'bad' : '';
+        const tie = s.ties > 0 ? '\u2013' + s.ties : '';
+        return '<div class="season-row"><span class="s-year">' + s.season + '</span><span class="s-rec ' + cls + '">' + s.wins + '\u2013' + s.losses + tie + '</span></div>';
+      }
+
+      const hasGap = seasons.some(function(s){ return +s.season <= 1995; }) && seasons.some(function(s){ return +s.season >= 1999; });
+      let gridRows = '';
+
+      if (hasGap) {
+        const pre = seasons.filter(function(s){ return +s.season <= 1995; });
+        const post = seasons.filter(function(s){ return +s.season >= 1999; });
+        if (pre.length % 2 !== 0) pre.unshift(null);
+        if (post.length % 2 !== 0) post.push(null);
+        gridRows = pre.map(makeRow).join('') +
+          '<div class="absent-row">No Browns football 1996\u20131998 \u2014 franchise relocated to Baltimore</div>' +
+          post.map(makeRow).join('');
+      } else {
+        const rows = seasons.map(makeRow);
+        if (rows.length % 2 !== 0) rows.push('<div class="season-row" style="background:var(--tan);border-right:none;border-bottom:none"></div>');
+        gridRows = rows.join('');
+      }
+
+      const tieStr = rec.ties > 0 ? '<span class="dash">\u2013</span>' + rec.ties : '';
+
+      area.innerHTML =
+        '<div class="result-card">' +
+          '<div class="result-hero">' +
+            '<div class="result-record">' + rec.wins + '<span class="dash">\u2013</span>' + rec.losses + tieStr + '</div>' +
+            '<div class="result-sub">Regular season &nbsp;\u00b7&nbsp; Since ' + fromLabel + ' &nbsp;\u00b7&nbsp; ' + rec.totalGames + ' games</div>' +
+          '</div>' +
+          '<div class="result-body">' +
+            '<div class="pct-row">' +
+              '<span class="pct-label-left">Win %</span>' +
+              '<div class="bar-bg"><div class="bar-fill" style="width:' + barW + '%"></div></div>' +
+              '<span class="bar-pct">' + pct + '%</span>' +
+            '</div>' +
+            '<div class="stats-grid">' +
+              '<div class="stat-box"><div class="stat-val" style="color:#2d6e2d">' + rec.wins + '</div><div class="stat-key">Wins</div></div>' +
+              '<div class="stat-box"><div class="stat-val" style="color:#aa2a2a">' + rec.losses + '</div><div class="stat-key">Losses</div></div>' +
+              '<div class="stat-box"><div class="stat-val">' + rec.ties + '</div><div class="stat-key">Ties</div></div>' +
+              '<div class="stat-box"><div class="stat-val">' + rec.totalGames + '</div><div class="stat-key">Games</div></div>' +
+            '</div>' +
+            '<div class="section-heading">Season by season</div>' +
+            '<div class="season-grid">' + gridRows + '</div>' +
+            (rec.note ? '<p class="result-note">\u2139\ufe0f ' + rec.note + '</p>' : '') +
+          '</div>' +
+        '</div>';
+
+    } catch(err) {
+      area.innerHTML = '<div class="error-box">Something went wrong. Check that your API key is correct and has available credits.<code>' + (errDetail || err.message) + '</code></div>';
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Look up';
+  }
+
+  window.addEventListener('DOMContentLoaded', function() {
+    if (getKey()) showLookup();
+    var keyInput = document.getElementById('api-key-input');
+    if (keyInput) keyInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveKey(); });
+    var dateInput = document.getElementById('start-date');
+    if (dateInput) dateInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') lookup(); });
+  });
+</script>
+</body>
+</html>
